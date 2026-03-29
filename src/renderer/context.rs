@@ -2,7 +2,10 @@ use std::sync::Arc;
 
 use vulkano::{
     VulkanLibrary,
-    device::{Device, physical::PhysicalDevice},
+    device::{
+        Device, DeviceCreateInfo, DeviceExtensions, Queue, QueueCreateInfo, QueueFlags,
+        physical::{PhysicalDevice, PhysicalDeviceType},
+    },
     instance::{
         Instance, InstanceCreateFlags, InstanceCreateInfo,
         debug::{
@@ -17,16 +20,29 @@ use winit::event_loop::EventLoop;
 pub struct VulkanContext {
     _messenger: Option<DebugUtilsMessenger>,
     pub instance: Arc<Instance>,
-    // pub physical_device: Arc<PhysicalDevice>,
-    // pub device: Arc<Device>,
+    pub physical_device: Arc<PhysicalDevice>,
+    pub device: Arc<Device>,
+    pub queue: Arc<Queue>,
+}
+
+struct PhysicalDeviceInfo {
+    physical_device: Arc<PhysicalDevice>,
+    queue_family_index: u32,
+    device_extensions: DeviceExtensions,
 }
 
 impl VulkanContext {
     pub fn new(event_loop: &EventLoop<()>) -> Self {
         let (instance, _messenger) = Self::create_instance(event_loop);
+        let phys_info = Self::select_physical_device(&instance, event_loop);
+        let (device, queue) = Self::create_logical_device(&phys_info);
+
         VulkanContext {
-            instance,
             _messenger,
+            instance,
+            physical_device: phys_info.physical_device,
+            device,
+            queue,
         }
     }
 
@@ -82,5 +98,69 @@ impl VulkanContext {
         });
 
         (instance, _messenger)
+    }
+
+    fn select_physical_device(
+        instance: &Arc<Instance>,
+        event_loop: &EventLoop<()>,
+    ) -> PhysicalDeviceInfo {
+        let device_extensions = DeviceExtensions {
+            khr_swapchain: true,
+            ..DeviceExtensions::empty()
+        };
+
+        let (physical_device, queue_family_index) = instance
+            .enumerate_physical_devices()
+            .unwrap()
+            .filter(|p| p.supported_extensions().contains(&device_extensions))
+            .filter_map(|p| {
+                p.queue_family_properties()
+                    .iter()
+                    .enumerate()
+                    .position(|(i, q)| {
+                        q.queue_flags
+                            .contains(QueueFlags::GRAPHICS | QueueFlags::COMPUTE)
+                            && p.presentation_support(i as u32, event_loop).unwrap()
+                    })
+                    .map(|i| (p, i as u32))
+            })
+            .min_by_key(|(p, _)| match p.properties().device_type {
+                PhysicalDeviceType::DiscreteGpu => 0,
+                PhysicalDeviceType::IntegratedGpu => 1,
+                PhysicalDeviceType::VirtualGpu => 2,
+                PhysicalDeviceType::Cpu => 3,
+                PhysicalDeviceType::Other => 4,
+                _ => 5,
+            })
+            .unwrap();
+
+        println!(
+            "Using device: {} (type: {:?})",
+            physical_device.properties().device_name,
+            physical_device.properties().device_type,
+        );
+
+        PhysicalDeviceInfo {
+            physical_device,
+            queue_family_index,
+            device_extensions,
+        }
+    }
+
+    fn create_logical_device(info: &PhysicalDeviceInfo) -> (Arc<Device>, Arc<Queue>) {
+        let (device, mut queues) = Device::new(
+            info.physical_device.clone(),
+            DeviceCreateInfo {
+                enabled_extensions: info.device_extensions,
+                queue_create_infos: vec![QueueCreateInfo {
+                    queue_family_index: info.queue_family_index,
+                    ..Default::default()
+                }],
+                ..Default::default()
+            },
+        )
+        .unwrap();
+
+        (device, queues.next().unwrap())
     }
 }
