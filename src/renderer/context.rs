@@ -13,16 +13,18 @@ use vulkano::{
             DebugUtilsMessengerCallback, DebugUtilsMessengerCreateInfo,
         },
     },
+    memory::allocator::StandardMemoryAllocator,
     swapchain::Surface,
 };
 use winit::event_loop::EventLoop;
 
 pub struct VulkanContext {
     _messenger: Option<DebugUtilsMessenger>,
-    pub instance: Arc<Instance>,
-    pub physical_device: Arc<PhysicalDevice>,
-    pub device: Arc<Device>,
-    pub queue: Arc<Queue>,
+    instance: Arc<Instance>,
+    physical_device: Arc<PhysicalDevice>,
+    device: Arc<Device>,
+    graphics_queue: Arc<Queue>,
+    memory_allocator: Arc<StandardMemoryAllocator>,
 }
 
 struct PhysicalDeviceInfo {
@@ -36,13 +38,18 @@ impl VulkanContext {
         let (instance, _messenger) = Self::create_instance(event_loop);
         let phys_info = Self::select_physical_device(&instance, event_loop);
         let (device, queue) = Self::create_logical_device(&phys_info);
+        let memory_allocator = Arc::new(StandardMemoryAllocator::new(
+            device.clone(),
+            Default::default(),
+        ));
 
         VulkanContext {
             _messenger,
             instance,
             physical_device: phys_info.physical_device,
             device,
-            queue,
+            graphics_queue: queue,
+            memory_allocator,
         }
     }
 
@@ -162,5 +169,29 @@ impl VulkanContext {
         .unwrap();
 
         (device, queues.next().unwrap())
+    }
+
+    /// Returns the instance.
+    #[inline]
+    pub fn instance(&self) -> &Arc<Instance> {
+        &self.instance
+    }
+
+    /// Returns the device.
+    #[inline]
+    pub fn device(&self) -> &Arc<Device> {
+        &self.device
+    }
+
+    /// Returns the graphics queue.
+    #[inline]
+    pub fn graphics_queue(&self) -> &Arc<Queue> {
+        &self.graphics_queue
+    }
+
+    /// Returns the memory allocator.
+    #[inline]
+    pub fn memory_allocator(&self) -> &Arc<StandardMemoryAllocator> {
+        &self.memory_allocator
     }
 }
