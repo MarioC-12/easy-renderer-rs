@@ -1,10 +1,5 @@
 use std::sync::Arc;
-use winit::{
-    application::ApplicationHandler,
-    event::WindowEvent,
-    event_loop::{self, EventLoop},
-    window::Window,
-};
+use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
 
 use crate::renderer::Renderer;
 
@@ -13,7 +8,7 @@ const HEIGHT: u32 = 600;
 
 pub struct TriangleApp {
     window: Option<Arc<Window>>,
-    renderer: Renderer,
+    renderer: Option<Renderer>,
 }
 
 impl ApplicationHandler for TriangleApp {
@@ -30,6 +25,7 @@ impl ApplicationHandler for TriangleApp {
 
         let window = Arc::new(window);
 
+        self.renderer = Some(Renderer::new(window.clone(), event_loop));
         self.window = Some(window);
     }
 
@@ -53,10 +49,10 @@ impl ApplicationHandler for TriangleApp {
 }
 
 impl TriangleApp {
-    pub fn new(event_loop: &EventLoop<()>) -> Self {
+    pub fn new() -> Self {
         TriangleApp {
             window: None,
-            renderer: Renderer::new(event_loop),
+            renderer: None,
         }
     }
 }

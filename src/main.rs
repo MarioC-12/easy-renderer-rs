@@ -1,5 +1,6 @@
 mod app;
 mod renderer;
+mod resources;
 
 use winit::{
     error::EventLoopError,
@@ -12,7 +13,7 @@ fn main() -> Result<(), EventLoopError> {
     let event_loop = EventLoop::new().unwrap();
     event_loop.set_control_flow(ControlFlow::Poll);
 
-    let mut app = TriangleApp::new(&event_loop);
+    let mut app = TriangleApp::new();
 
     event_loop.run_app(&mut app)?;
     Ok(())

@@ -3,7 +3,8 @@ use std::sync::Arc;
 use vulkano::{
     VulkanLibrary,
     device::{
-        Device, DeviceCreateInfo, DeviceExtensions, Queue, QueueCreateInfo, QueueFlags,
+        Device, DeviceCreateInfo, DeviceExtensions, DeviceFeatures, Queue, QueueCreateInfo,
+        QueueFlags,
         physical::{PhysicalDevice, PhysicalDeviceType},
     },
     instance::{
@@ -16,7 +17,7 @@ use vulkano::{
     memory::allocator::StandardMemoryAllocator,
     swapchain::Surface,
 };
-use winit::event_loop::EventLoop;
+use winit::event_loop::{ActiveEventLoop, EventLoop};
 
 pub struct VulkanContext {
     _messenger: Option<DebugUtilsMessenger>,
@@ -29,19 +30,15 @@ pub struct VulkanContext {
 
 struct PhysicalDeviceInfo {
     physical_device: Arc<PhysicalDevice>,
-    queue_family_index: u32,
     device_extensions: DeviceExtensions,
 }
 
 impl VulkanContext {
-    pub fn new(event_loop: &EventLoop<()>) -> Self {
+    pub fn new(event_loop: &ActiveEventLoop) -> Self {
         let (instance, _messenger) = Self::create_instance(event_loop);
-        let phys_info = Self::select_physical_device(&instance, event_loop);
-        let (device, queue) = Self::create_logical_device(&phys_info);
-        let memory_allocator = Arc::new(StandardMemoryAllocator::new(
-            device.clone(),
-            Default::default(),
-        ));
+        let phys_info = Self::select_physical_device(&instance);
+        let (device, queue) = Self::create_logical_device(&phys_info, event_loop);
+        let memory_allocator = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
 
         VulkanContext {
             _messenger,
@@ -53,7 +50,9 @@ impl VulkanContext {
         }
     }
 
-    fn create_instance(event_loop: &EventLoop<()>) -> (Arc<Instance>, Option<DebugUtilsMessenger>) {
+    fn create_instance(
+        event_loop: &ActiveEventLoop,
+    ) -> (Arc<Instance>, Option<DebugUtilsMessenger>) {
         let library = VulkanLibrary::new().expect("no VulkanLibrary/DLL");
 
         //Validation layers activation
@@ -107,31 +106,17 @@ impl VulkanContext {
         (instance, _messenger)
     }
 
-    fn select_physical_device(
-        instance: &Arc<Instance>,
-        event_loop: &EventLoop<()>,
-    ) -> PhysicalDeviceInfo {
+    fn select_physical_device(instance: &Arc<Instance>) -> PhysicalDeviceInfo {
         let device_extensions = DeviceExtensions {
             khr_swapchain: true,
             ..DeviceExtensions::empty()
         };
 
-        let (physical_device, queue_family_index) = instance
+        let physical_device = instance
             .enumerate_physical_devices()
-            .unwrap()
+            .expect("failed to get any physical device")
             .filter(|p| p.supported_extensions().contains(&device_extensions))
-            .filter_map(|p| {
-                p.queue_family_properties()
-                    .iter()
-                    .enumerate()
-                    .position(|(i, q)| {
-                        q.queue_flags
-                            .contains(QueueFlags::GRAPHICS | QueueFlags::COMPUTE)
-                            && p.presentation_support(i as u32, event_loop).unwrap()
-                    })
-                    .map(|i| (p, i as u32))
-            })
-            .min_by_key(|(p, _)| match p.properties().device_type {
+            .min_by_key(|p| match p.properties().device_type {
                 PhysicalDeviceType::DiscreteGpu => 0,
                 PhysicalDeviceType::IntegratedGpu => 1,
                 PhysicalDeviceType::VirtualGpu => 2,
@@ -139,7 +124,7 @@ impl VulkanContext {
                 PhysicalDeviceType::Other => 4,
                 _ => 5,
             })
-            .unwrap();
+            .expect("failed to get physical device");
 
         println!(
             "Using device: {} (type: {:?})",
@@ -149,18 +134,39 @@ impl VulkanContext {
 
         PhysicalDeviceInfo {
             physical_device,
-            queue_family_index,
             device_extensions,
         }
     }
 
-    fn create_logical_device(info: &PhysicalDeviceInfo) -> (Arc<Device>, Arc<Queue>) {
+    fn create_logical_device(
+        info: &PhysicalDeviceInfo,
+        event_loop: &ActiveEventLoop,
+    ) -> (Arc<Device>, Arc<Queue>) {
+        let queue_family_index = info
+            .physical_device
+            .queue_family_properties()
+            .iter()
+            .enumerate()
+            .position(|(i, q)| {
+                q.queue_flags
+                    .contains(QueueFlags::GRAPHICS | QueueFlags::COMPUTE)
+                    && info
+                        .physical_device
+                        .presentation_support(i as u32, event_loop)
+                        .unwrap()
+            })
+            .expect("cannot find queue family with graphics and compute capabilities");
+
         let (device, mut queues) = Device::new(
             info.physical_device.clone(),
             DeviceCreateInfo {
                 enabled_extensions: info.device_extensions,
+                enabled_features: DeviceFeatures {
+                    dynamic_rendering: true,
+                    ..Default::default()
+                },
                 queue_create_infos: vec![QueueCreateInfo {
-                    queue_family_index: info.queue_family_index,
+                    queue_family_index: queue_family_index as u32,
                     ..Default::default()
                 }],
                 ..Default::default()
