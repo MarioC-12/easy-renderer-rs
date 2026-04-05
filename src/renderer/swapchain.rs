@@ -83,7 +83,7 @@ impl SwapchainBundle {
 
     #[inline]
     pub fn image_format(&self) -> Format {
-        self.images[self.image_index as usize].format()
+        self.swapchain.image_format()
     }
 
     #[inline]

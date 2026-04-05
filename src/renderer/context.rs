@@ -148,8 +148,7 @@ impl VulkanContext {
             .iter()
             .enumerate()
             .position(|(i, q)| {
-                q.queue_flags
-                    .contains(QueueFlags::GRAPHICS | QueueFlags::COMPUTE)
+                q.queue_flags.contains(QueueFlags::GRAPHICS)
                     && info
                         .physical_device
                         .presentation_support(i as u32, event_loop)
