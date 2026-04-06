@@ -101,4 +101,9 @@ impl SwapchainBundle {
         let [w, h] = self.swapchain.image_extent();
         [w as f32, h as f32]
     }
+
+    #[inline]
+    pub fn image_view(&self) -> &Arc<ImageView> {
+        &self.images[self.image_index]
+    }
 }

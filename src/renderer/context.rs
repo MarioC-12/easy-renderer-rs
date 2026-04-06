@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use vulkano::{
     VulkanLibrary,
+    command_buffer::allocator::StandardCommandBufferAllocator,
     device::{
         Device, DeviceCreateInfo, DeviceExtensions, DeviceFeatures, Queue, QueueCreateInfo,
         QueueFlags,
@@ -17,7 +18,7 @@ use vulkano::{
     memory::allocator::StandardMemoryAllocator,
     swapchain::Surface,
 };
-use winit::event_loop::{ActiveEventLoop, EventLoop};
+use winit::event_loop::ActiveEventLoop;
 
 pub struct VulkanContext {
     _messenger: Option<DebugUtilsMessenger>,
@@ -26,6 +27,7 @@ pub struct VulkanContext {
     device: Arc<Device>,
     graphics_queue: Arc<Queue>,
     memory_allocator: Arc<StandardMemoryAllocator>,
+    command_buffer_allocator: Arc<StandardCommandBufferAllocator>,
 }
 
 struct PhysicalDeviceInfo {
@@ -39,6 +41,10 @@ impl VulkanContext {
         let phys_info = Self::select_physical_device(&instance);
         let (device, queue) = Self::create_logical_device(&phys_info, event_loop);
         let memory_allocator = Arc::new(StandardMemoryAllocator::new_default(device.clone()));
+        let command_buffer_allocator = Arc::new(StandardCommandBufferAllocator::new(
+            device.clone(),
+            Default::default(),
+        ));
 
         VulkanContext {
             _messenger,
@@ -47,6 +53,7 @@ impl VulkanContext {
             device,
             graphics_queue: queue,
             memory_allocator,
+            command_buffer_allocator,
         }
     }
 
@@ -198,5 +205,10 @@ impl VulkanContext {
     #[inline]
     pub fn memory_allocator(&self) -> &Arc<StandardMemoryAllocator> {
         &self.memory_allocator
+    }
+
+    #[inline]
+    pub fn command_allocator(&self) -> &Arc<StandardCommandBufferAllocator> {
+        &self.command_buffer_allocator
     }
 }

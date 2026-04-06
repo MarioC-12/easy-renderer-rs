@@ -23,6 +23,7 @@ use vulkano::{
     shader::EntryPoint,
 };
 
+//TODO: Is this struct really needed?
 pub struct PipelineBundle {
     pipeline: Arc<GraphicsPipeline>,
 }
@@ -89,5 +90,9 @@ impl PipelineBundle {
                 .entry_point("main")
                 .unwrap()
         })
+    }
+
+    pub fn pipeline(&self) -> &Arc<GraphicsPipeline> {
+        &self.pipeline
     }
 }
