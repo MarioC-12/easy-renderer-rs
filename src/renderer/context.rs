@@ -1,22 +1,22 @@
 use std::sync::Arc;
 
 use vulkano::{
-    VulkanLibrary,
     command_buffer::allocator::StandardCommandBufferAllocator,
     device::{
+        physical::{PhysicalDevice, PhysicalDeviceType},
         Device, DeviceCreateInfo, DeviceExtensions, DeviceFeatures, Queue, QueueCreateInfo,
         QueueFlags,
-        physical::{PhysicalDevice, PhysicalDeviceType},
     },
     instance::{
-        Instance, InstanceCreateFlags, InstanceCreateInfo,
         debug::{
             DebugUtilsMessageSeverity, DebugUtilsMessageType, DebugUtilsMessenger,
             DebugUtilsMessengerCallback, DebugUtilsMessengerCreateInfo,
         },
+        Instance, InstanceCreateFlags, InstanceCreateInfo,
     },
     memory::allocator::StandardMemoryAllocator,
     swapchain::Surface,
+    VulkanLibrary,
 };
 use winit::event_loop::ActiveEventLoop;
 

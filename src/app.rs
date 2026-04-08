@@ -41,6 +41,7 @@ impl ApplicationHandler for TriangleApp {
                 event_loop.exit();
             }
             WindowEvent::RedrawRequested => {
+                self.renderer.as_mut().unwrap().draw_frame();
                 self.window.as_ref().unwrap().request_redraw();
             }
             _ => (),

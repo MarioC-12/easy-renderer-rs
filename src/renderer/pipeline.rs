@@ -7,9 +7,7 @@ use std::sync::Arc;
 use vulkano::{
     device::Device,
     pipeline::{
-        GraphicsPipeline, PipelineLayout, PipelineShaderStageCreateInfo,
         graphics::{
-            GraphicsPipelineCreateInfo,
             color_blend::{ColorBlendAttachmentState, ColorBlendState},
             input_assembly::InputAssemblyState,
             multisample::MultisampleState,
@@ -17,8 +15,10 @@ use vulkano::{
             subpass::{PipelineRenderingCreateInfo, PipelineSubpassType},
             vertex_input::VertexInputState,
             viewport::{Viewport, ViewportState},
+            GraphicsPipelineCreateInfo,
         },
         layout::PipelineDescriptorSetLayoutCreateInfo,
+        GraphicsPipeline, PipelineLayout, PipelineShaderStageCreateInfo,
     },
     shader::EntryPoint,
 };

@@ -1,8 +1,8 @@
 use std::sync::Arc;
 use vulkano::{
     command_buffer::{
-        AutoCommandBufferBuilder, CommandBufferUsage, PrimaryAutoCommandBuffer,
-        RenderingAttachmentInfo, RenderingInfo, allocator::StandardCommandBufferAllocator,
+        allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
+        PrimaryAutoCommandBuffer, RenderingAttachmentInfo, RenderingInfo,
     },
     format::ClearValue,
     image::view::ImageView,
