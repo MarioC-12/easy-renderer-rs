@@ -18,7 +18,7 @@ impl ApplicationHandler for TriangleApp {
                 Window::default_attributes()
                     .with_title("Rust Triangle!")
                     .with_inner_size(winit::dpi::LogicalSize::new(WIDTH as f64, HEIGHT as f64))
-                    .with_resizable(false)
+                    .with_resizable(true)
                     .with_visible(true),
             )
             .unwrap();
@@ -39,6 +39,9 @@ impl ApplicationHandler for TriangleApp {
             WindowEvent::CloseRequested => {
                 println!("Stopping program!");
                 event_loop.exit();
+            }
+            WindowEvent::Resized(_) => {
+                self.renderer.as_mut().unwrap().handle_resize();
             }
             WindowEvent::RedrawRequested => {
                 self.renderer.as_mut().unwrap().draw_frame();

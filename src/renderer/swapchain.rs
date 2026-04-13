@@ -13,12 +13,17 @@ use vulkano::{
 };
 use winit::window::Window;
 
+pub const FRAME_IN_FLIGHT: usize = 2;
+
 pub struct SwapchainBundle {
+    window: Arc<Window>,
     swapchain: Arc<Swapchain>,
     images: Vec<Arc<ImageView>>,
+    present_mode: PresentMode,
     recreate_swapchain: bool,
     image_index: u32,
-    previous_frame_end: Option<Box<dyn GpuFuture>>,
+    current_frame: usize,
+    previous_frame_ends: Vec<Option<Box<dyn GpuFuture>>>,
 }
 
 impl SwapchainBundle {
@@ -79,14 +84,19 @@ impl SwapchainBundle {
             .map(|image| ImageView::new_default(image).unwrap())
             .collect::<Vec<_>>();
 
-        let previous_frame_end = Some(sync::now(device.clone()).boxed());
+        let previous_frame_ends = (0..FRAME_IN_FLIGHT)
+            .map(|_| Some(sync::now(device.clone()).boxed()))
+            .collect();
 
         SwapchainBundle {
+            window: window.clone(),
             swapchain,
             images,
+            present_mode,
             image_index: 0,
             recreate_swapchain: false,
-            previous_frame_end,
+            current_frame: 0,
+            previous_frame_ends,
         }
     }
 
@@ -117,12 +127,40 @@ impl SwapchainBundle {
     }
 
     #[inline]
+    fn recreate_swapchain(&mut self) {
+        let image_extent: [u32; 2] = self.window.inner_size().into();
+
+        if image_extent.contains(&0) {
+            return;
+        }
+
+        let (new_swapchain, new_images) = self
+            .swapchain
+            .recreate(SwapchainCreateInfo {
+                image_extent,
+                present_mode: self.present_mode,
+                ..self.swapchain.create_info()
+            })
+            .expect("failed to recreate swapchain");
+
+        self.swapchain = new_swapchain;
+
+        let new_images = new_images
+            .into_iter()
+            .map(|image| ImageView::new_default(image).unwrap())
+            .collect::<Vec<_>>();
+
+        self.images = new_images;
+    }
+
+    #[inline]
     pub fn acquire(
         &mut self,
         timeout: Option<Duration>,
     ) -> Result<Box<dyn GpuFuture>, VulkanError> {
         if self.recreate_swapchain {
-            //TODO: Recrate swapchain
+            self.recreate_swapchain();
+            self.recreate_swapchain = false;
         }
 
         let (image_index, suboptimal, acquire_future) =
@@ -142,9 +180,9 @@ impl SwapchainBundle {
         }
 
         self.image_index = image_index;
-        let future = self.previous_frame_end.take().unwrap().join(acquire_future);
 
-        Ok(future.boxed())
+        let prev = self.previous_frame_ends[self.current_frame].take().unwrap();
+        Ok(prev.join(acquire_future).boxed())
     }
 
     #[inline]
@@ -168,15 +206,23 @@ impl SwapchainBundle {
         match future.map_err(Validated::unwrap) {
             Ok(mut future) => {
                 future.cleanup_finished();
-                self.previous_frame_end = Some(future.boxed());
+                self.previous_frame_ends[self.current_frame] = Some(future.boxed());
             }
             Err(VulkanError::OutOfDate) => {
                 self.recreate_swapchain = true;
-                self.previous_frame_end = Some(sync::now(device.clone()).boxed());
+                self.previous_frame_ends[self.current_frame] =
+                    Some(sync::now(device.clone()).boxed());
             }
             Err(e) => {
                 panic!("failed to flush future: {e}");
             }
         }
+
+        self.current_frame = (self.current_frame + 1) % FRAME_IN_FLIGHT;
+    }
+
+    #[inline]
+    pub fn request_recreate(&mut self) {
+        self.recreate_swapchain = true;
     }
 }

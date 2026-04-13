@@ -7,7 +7,9 @@ use std::sync::Arc;
 use vulkano::{
     device::Device,
     pipeline::{
+        DynamicState, GraphicsPipeline, PipelineLayout, PipelineShaderStageCreateInfo,
         graphics::{
+            GraphicsPipelineCreateInfo,
             color_blend::{ColorBlendAttachmentState, ColorBlendState},
             input_assembly::InputAssemblyState,
             multisample::MultisampleState,
@@ -15,10 +17,8 @@ use vulkano::{
             subpass::{PipelineRenderingCreateInfo, PipelineSubpassType},
             vertex_input::VertexInputState,
             viewport::{Viewport, ViewportState},
-            GraphicsPipelineCreateInfo,
         },
         layout::PipelineDescriptorSetLayoutCreateInfo,
-        GraphicsPipeline, PipelineLayout, PipelineShaderStageCreateInfo,
     },
     shader::EntryPoint,
 };
@@ -63,16 +63,14 @@ impl PipelineBundle {
                 stages: stages.into_iter().collect(),
                 vertex_input_state: Some(VertexInputState::default()),
                 input_assembly_state: Some(InputAssemblyState::default()),
-                viewport_state: Some(ViewportState {
-                    viewports: [viewport].into_iter().collect(),
-                    ..Default::default()
-                }),
+                viewport_state: Some(ViewportState::default()),
                 rasterization_state: Some(RasterizationState::default()),
                 multisample_state: Some(MultisampleState::default()),
                 color_blend_state: Some(ColorBlendState::with_attachment_states(
                     rendering_info.color_attachment_formats.len() as u32,
                     ColorBlendAttachmentState::default(),
                 )),
+                dynamic_state: [DynamicState::Viewport].into_iter().collect(),
                 // This graphics pipeline object concerns the first pass of the render pass.
                 subpass: Some(PipelineSubpassType::BeginRendering(rendering_info)),
                 ..GraphicsPipelineCreateInfo::layout(layout)

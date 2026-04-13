@@ -1,12 +1,12 @@
 use std::sync::Arc;
 use vulkano::{
     command_buffer::{
-        allocator::StandardCommandBufferAllocator, AutoCommandBufferBuilder, CommandBufferUsage,
-        PrimaryAutoCommandBuffer, RenderingAttachmentInfo, RenderingInfo,
+        AutoCommandBufferBuilder, CommandBufferUsage, PrimaryAutoCommandBuffer,
+        RenderingAttachmentInfo, RenderingInfo, allocator::StandardCommandBufferAllocator,
     },
     format::ClearValue,
     image::view::ImageView,
-    pipeline::GraphicsPipeline,
+    pipeline::{GraphicsPipeline, graphics::viewport::Viewport},
     render_pass::{AttachmentLoadOp, AttachmentStoreOp},
 };
 
@@ -23,6 +23,8 @@ pub fn record_command_buffer(
     )
     .unwrap();
 
+    let extent = swapchain_image_view.image().extent();
+
     builder
         .begin_rendering(RenderingInfo {
             render_area_extent: swapchain_image_view.image().extent()[0..2]
@@ -37,6 +39,17 @@ pub fn record_command_buffer(
             })],
             ..Default::default()
         })
+        .unwrap()
+        .set_viewport(
+            0,
+            [Viewport {
+                offset: [0.0, 0.0],
+                extent: [extent[0] as f32, extent[1] as f32],
+                depth_range: 0.0..=1.0,
+            }]
+            .into_iter()
+            .collect(),
+        )
         .unwrap()
         .bind_pipeline_graphics(pipeline.clone())
         .unwrap();

@@ -5,7 +5,7 @@ mod swapchain;
 
 use std::{sync::Arc, time::Duration};
 
-use vulkano::sync::GpuFuture;
+use vulkano::{command_buffer::PrimaryAutoCommandBuffer, sync::GpuFuture};
 use winit::{event_loop::ActiveEventLoop, window::Window};
 
 use crate::renderer::{
@@ -25,12 +25,6 @@ impl Renderer {
         let context = VulkanContext::new(event_loop);
         let swapchain = SwapchainBundle::new(context.device(), &window);
         let pipeline = PipelineBundle::new(context.device(), &swapchain);
-        let command_b = record_command_buffer(
-            context.command_allocator(),
-            context.graphics_queue().queue_family_index(),
-            pipeline.pipeline(),
-            swapchain.image_view(),
-        );
 
         Renderer {
             window,
@@ -41,17 +35,17 @@ impl Renderer {
     }
 
     pub fn draw_frame(&mut self) {
+        let future = self
+            .swapchain
+            .acquire(Some(Duration::from_secs(1)))
+            .unwrap();
+
         let cmd_buffer = record_command_buffer(
             self.context.command_allocator(),
             self.context.graphics_queue().queue_family_index(),
             self.pipeline.pipeline(),
             self.swapchain.image_view(),
         );
-
-        let future = self
-            .swapchain
-            .acquire(Some(Duration::from_secs(1)))
-            .unwrap();
 
         let future = future
             .then_execute(self.context.graphics_queue().clone(), cmd_buffer)
@@ -64,5 +58,9 @@ impl Renderer {
             self.context.graphics_queue().clone(),
             false,
         );
+    }
+
+    pub fn handle_resize(&mut self) {
+        self.swapchain.request_recreate();
     }
 }
