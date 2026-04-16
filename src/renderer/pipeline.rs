@@ -1,6 +1,9 @@
 use crate::{
     renderer::swapchain::SwapchainBundle,
-    resources::shaders::{fs, vs},
+    resources::{
+        buffers::VertexT,
+        shaders::{fs, vs},
+    },
 };
 use std::sync::Arc;
 
@@ -15,8 +18,8 @@ use vulkano::{
             multisample::MultisampleState,
             rasterization::RasterizationState,
             subpass::{PipelineRenderingCreateInfo, PipelineSubpassType},
-            vertex_input::VertexInputState,
-            viewport::{Viewport, ViewportState},
+            vertex_input::{Vertex, VertexDefinition},
+            viewport::ViewportState,
         },
         layout::PipelineDescriptorSetLayoutCreateInfo,
     },
@@ -30,13 +33,9 @@ pub struct PipelineBundle {
 
 impl PipelineBundle {
     pub fn new(device: &Arc<Device>, swapchain_b: &SwapchainBundle) -> PipelineBundle {
-        let viewport = Viewport {
-            offset: [0.0, 0.0],
-            extent: swapchain_b.extent(),
-            depth_range: 0.0..=1.0,
-        };
-
         let [vs, fs] = Self::load_shaders(device);
+
+        let vertex_input_state = VertexT::per_vertex().definition(&vs).unwrap();
 
         let stages = [
             PipelineShaderStageCreateInfo::new(vs),
@@ -61,7 +60,7 @@ impl PipelineBundle {
             None,
             GraphicsPipelineCreateInfo {
                 stages: stages.into_iter().collect(),
-                vertex_input_state: Some(VertexInputState::default()),
+                vertex_input_state: Some(vertex_input_state),
                 input_assembly_state: Some(InputAssemblyState::default()),
                 viewport_state: Some(ViewportState::default()),
                 rasterization_state: Some(RasterizationState::default()),
