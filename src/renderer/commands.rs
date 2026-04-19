@@ -60,9 +60,11 @@ pub fn record_command_buffer(
     //TODO: Handle multiple meshes
     builder
         .bind_vertex_buffers(0, mesh.vertex_buffer().clone())
+        .unwrap()
+        .bind_index_buffer(mesh.index_buffer().clone())
         .unwrap();
 
-    unsafe { builder.draw(mesh.num_vertices(), 1, 0, 0) }
+    unsafe { builder.draw_indexed(mesh.num_indexes(), 1, 0, 0, 0) }
         .unwrap()
         .end_rendering()
         .unwrap();
