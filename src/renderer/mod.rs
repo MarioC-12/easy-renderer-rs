@@ -8,9 +8,12 @@ use std::{sync::Arc, time::Duration};
 use vulkano::{command_buffer::PrimaryAutoCommandBuffer, sync::GpuFuture};
 use winit::{event_loop::ActiveEventLoop, window::Window};
 
-use crate::renderer::{
-    commands::record_command_buffer, context::VulkanContext, pipeline::PipelineBundle,
-    swapchain::SwapchainBundle,
+use crate::{
+    renderer::{
+        commands::record_command_buffer, context::VulkanContext, pipeline::PipelineBundle,
+        swapchain::SwapchainBundle,
+    },
+    scene::mesh::Mesh,
 };
 
 pub struct Renderer {
@@ -34,7 +37,7 @@ impl Renderer {
         }
     }
 
-    pub fn draw_frame(&mut self) {
+    pub fn draw_frame(&mut self, mesh: &Mesh) {
         let future = self
             .swapchain
             .acquire(Some(Duration::from_secs(1)))
@@ -45,6 +48,7 @@ impl Renderer {
             self.context.graphics_queue().queue_family_index(),
             self.pipeline.pipeline(),
             self.swapchain.image_view(),
+            mesh,
         );
 
         let future = future
@@ -62,5 +66,10 @@ impl Renderer {
 
     pub fn handle_resize(&mut self) {
         self.swapchain.request_recreate();
+    }
+
+    #[inline]
+    pub fn context(&self) -> &VulkanContext {
+        &self.context
     }
 }

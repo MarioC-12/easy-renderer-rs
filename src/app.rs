@@ -1,7 +1,22 @@
 use std::sync::Arc;
 use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
 
-use crate::renderer::Renderer;
+use crate::{renderer::Renderer, resources::buffers::VertexT, scene::mesh::Mesh};
+
+const VERTICES: [VertexT; 3] = [
+    VertexT {
+        in_position: [0.0, -0.5],
+        in_color: [1.0, 0.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5],
+        in_color: [0.0, 1.0, 0.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5],
+        in_color: [0.0, 0.0, 1.0],
+    },
+];
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -9,6 +24,7 @@ const HEIGHT: u32 = 600;
 pub struct TriangleApp {
     window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
+    mesh: Option<Mesh>,
 }
 
 impl ApplicationHandler for TriangleApp {
@@ -24,9 +40,12 @@ impl ApplicationHandler for TriangleApp {
             .unwrap();
 
         let window = Arc::new(window);
+        let rend = Renderer::new(window.clone(), event_loop);
+        let mesh = Mesh::new(rend.context().memory_allocator(), &VERTICES);
 
-        self.renderer = Some(Renderer::new(window.clone(), event_loop));
+        self.renderer = Some(rend);
         self.window = Some(window);
+        self.mesh = Some(mesh);
     }
 
     fn window_event(
@@ -44,7 +63,10 @@ impl ApplicationHandler for TriangleApp {
                 self.renderer.as_mut().unwrap().handle_resize();
             }
             WindowEvent::RedrawRequested => {
-                self.renderer.as_mut().unwrap().draw_frame();
+                self.renderer
+                    .as_mut()
+                    .unwrap()
+                    .draw_frame(self.mesh.as_ref().unwrap());
                 self.window.as_ref().unwrap().request_redraw();
             }
             _ => (),
@@ -57,6 +79,7 @@ impl TriangleApp {
         TriangleApp {
             window: None,
             renderer: None,
+            mesh: None,
         }
     }
 }

@@ -1,6 +1,7 @@
 mod app;
 mod renderer;
 mod resources;
+mod scene;
 
 use winit::{
     error::EventLoopError,

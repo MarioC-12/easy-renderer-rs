@@ -10,11 +10,14 @@ use vulkano::{
     render_pass::{AttachmentLoadOp, AttachmentStoreOp},
 };
 
+use crate::scene::mesh::Mesh;
+
 pub fn record_command_buffer(
     allocator: &Arc<StandardCommandBufferAllocator>,
     queue_family_index: u32,
     pipeline: &Arc<GraphicsPipeline>,
     swapchain_image_view: &Arc<ImageView>,
+    mesh: &Mesh,
 ) -> Arc<PrimaryAutoCommandBuffer> {
     let mut builder = AutoCommandBufferBuilder::primary(
         allocator.clone(),
@@ -54,7 +57,12 @@ pub fn record_command_buffer(
         .bind_pipeline_graphics(pipeline.clone())
         .unwrap();
 
-    unsafe { builder.draw(3, 1, 0, 0) }
+    //TODO: Handle multiple meshes
+    builder
+        .bind_vertex_buffers(0, mesh.vertex_buffer().clone())
+        .unwrap();
+
+    unsafe { builder.draw(mesh.num_vertices(), 1, 0, 0) }
         .unwrap()
         .end_rendering()
         .unwrap();
