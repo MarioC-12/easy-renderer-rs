@@ -1,10 +1,4 @@
-use std::sync::Arc;
-
-use vulkano::{
-    buffer::{Buffer, BufferContents, BufferCreateInfo, BufferUsage, Subbuffer},
-    memory::allocator::{AllocationCreateInfo, MemoryTypeFilter, StandardMemoryAllocator},
-    pipeline::graphics::vertex_input::Vertex,
-};
+use vulkano::{buffer::BufferContents, pipeline::graphics::vertex_input::Vertex};
 
 #[derive(BufferContents, Vertex)]
 #[repr(C)]
