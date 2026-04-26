@@ -1,15 +1,18 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{Arc, atomic::fence},
+    time::Duration,
+};
 
 use vulkano::{
     Validated, VulkanError,
-    device::{Device, Queue},
+    device::{Device, DeviceOwned, Queue},
     format::Format,
     image::{ImageUsage, view::ImageView},
     swapchain::{
         self, ColorSpace, PresentMode, Surface, Swapchain, SwapchainCreateInfo,
         SwapchainPresentInfo,
     },
-    sync::{self, GpuFuture},
+    sync::{self, GpuFuture, future::FenceSignalFuture},
 };
 use winit::window::Window;
 
@@ -23,7 +26,7 @@ pub struct SwapchainBundle {
     recreate_swapchain: bool,
     image_index: u32,
     current_frame: usize,
-    previous_frame_ends: Vec<Option<Box<dyn GpuFuture>>>,
+    previous_frame_ends: Vec<Option<FenceSignalFuture<Box<dyn GpuFuture>>>>,
 }
 
 impl SwapchainBundle {
@@ -84,9 +87,8 @@ impl SwapchainBundle {
             .map(|image| ImageView::new_default(image).unwrap())
             .collect::<Vec<_>>();
 
-        let previous_frame_ends = (0..FRAMES_IN_FLIGHT)
-            .map(|_| Some(sync::now(device.clone()).boxed()))
-            .collect();
+        let previous_frame_ends: Vec<Option<FenceSignalFuture<Box<dyn GpuFuture>>>> =
+            (0..FRAMES_IN_FLIGHT).map(|_| None).collect();
 
         SwapchainBundle {
             window: window.clone(),
@@ -181,7 +183,11 @@ impl SwapchainBundle {
 
         self.image_index = image_index;
 
-        let prev = self.previous_frame_ends[self.current_frame].take().unwrap();
+        let prev = self.previous_frame_ends[self.current_frame]
+            .take()
+            .map(|f| f.boxed() as Box<dyn GpuFuture>)
+            .unwrap_or_else(|| sync::now(self.swapchain.device().clone()).boxed());
+
         Ok(prev.join(acquire_future).boxed())
     }
 
@@ -201,17 +207,17 @@ impl SwapchainBundle {
                     self.image_index,
                 ),
             )
+            .boxed()
             .then_signal_fence_and_flush();
 
         match future.map_err(Validated::unwrap) {
             Ok(mut future) => {
                 future.cleanup_finished();
-                self.previous_frame_ends[self.current_frame] = Some(future.boxed());
+                self.previous_frame_ends[self.current_frame] = Some(future);
             }
             Err(VulkanError::OutOfDate) => {
                 self.recreate_swapchain = true;
-                self.previous_frame_ends[self.current_frame] =
-                    Some(sync::now(device.clone()).boxed());
+                self.previous_frame_ends[self.current_frame] = None;
             }
             Err(e) => {
                 panic!("failed to flush future: {e}");
@@ -229,5 +235,12 @@ impl SwapchainBundle {
     #[inline]
     pub fn current_frame(&self) -> usize {
         self.current_frame
+    }
+
+    #[inline]
+    pub fn wait_for_current_frame_fence(&self) {
+        if let Some(ref fence) = self.previous_frame_ends[self.current_frame] {
+            fence.wait(None).unwrap();
+        }
     }
 }

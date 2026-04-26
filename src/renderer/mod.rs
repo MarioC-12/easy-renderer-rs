@@ -53,6 +53,8 @@ impl Renderer {
             .acquire(Some(Duration::from_secs(1)))
             .unwrap();
 
+        self.swapchain.wait_for_current_frame_fence();
+
         let frame_index = self.swapchain.current_frame();
         let model = Mat4::IDENTITY.to_cols_array_2d();
         let view = Mat4::look_at_rh(
