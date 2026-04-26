@@ -1,18 +1,21 @@
 mod commands;
 mod context;
+mod descriptors;
 mod pipeline;
 mod swapchain;
 
 use std::{sync::Arc, time::Duration};
 
+use glam::{Mat4, Vec3};
 use vulkano::{command_buffer::PrimaryAutoCommandBuffer, sync::GpuFuture};
 use winit::{event_loop::ActiveEventLoop, window::Window};
 
 use crate::{
     renderer::{
-        commands::record_command_buffer, context::VulkanContext, pipeline::PipelineBundle,
-        swapchain::SwapchainBundle,
+        commands::record_command_buffer, context::VulkanContext, descriptors::DescriptorBundle,
+        pipeline::PipelineBundle, swapchain::SwapchainBundle,
     },
+    resources::shaders::vs,
     scene::mesh::Mesh,
 };
 
@@ -21,6 +24,7 @@ pub struct Renderer {
     context: VulkanContext,
     swapchain: SwapchainBundle,
     pipeline: PipelineBundle,
+    descriptors: DescriptorBundle,
 }
 
 impl Renderer {
@@ -28,12 +32,18 @@ impl Renderer {
         let context = VulkanContext::new(event_loop);
         let swapchain = SwapchainBundle::new(context.device(), &window);
         let pipeline = PipelineBundle::new(context.device(), &swapchain);
+        let descriptors = DescriptorBundle::new(
+            context.memory_allocator(),
+            context.descriptor_set_allocator(),
+            pipeline.pipeline(),
+        );
 
         Renderer {
             window,
             context,
             swapchain,
             pipeline,
+            descriptors,
         }
     }
 
@@ -43,11 +53,26 @@ impl Renderer {
             .acquire(Some(Duration::from_secs(1)))
             .unwrap();
 
+        let frame_index = self.swapchain.current_frame();
+        let model = Mat4::IDENTITY.to_cols_array_2d();
+        let view = Mat4::look_at_rh(
+            Vec3::new(0.0, 0.0, 2.0),
+            Vec3::new(0.0, 0.0, 0.0),
+            Vec3::new(0.0, 1.0, 0.0),
+        )
+        .to_cols_array_2d();
+        let proj =
+            Mat4::perspective_rh(45.0_f32.to_radians(), 16.0 / 9.0, 0.1, 100.0).to_cols_array_2d();
+        let mvp = vs::MVP { model, view, proj };
+
+        self.descriptors.update_mvp(frame_index, mvp);
+
         let cmd_buffer = record_command_buffer(
             self.context.command_allocator(),
             self.context.graphics_queue().queue_family_index(),
             self.pipeline.pipeline(),
             self.swapchain.image_view(),
+            self.descriptors.mvp_set(frame_index).clone(),
             mesh,
         );
 

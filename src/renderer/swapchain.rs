@@ -13,7 +13,7 @@ use vulkano::{
 };
 use winit::window::Window;
 
-pub const FRAME_IN_FLIGHT: usize = 2;
+pub const FRAMES_IN_FLIGHT: usize = 2;
 
 pub struct SwapchainBundle {
     window: Arc<Window>,
@@ -84,7 +84,7 @@ impl SwapchainBundle {
             .map(|image| ImageView::new_default(image).unwrap())
             .collect::<Vec<_>>();
 
-        let previous_frame_ends = (0..FRAME_IN_FLIGHT)
+        let previous_frame_ends = (0..FRAMES_IN_FLIGHT)
             .map(|_| Some(sync::now(device.clone()).boxed()))
             .collect();
 
@@ -218,11 +218,16 @@ impl SwapchainBundle {
             }
         }
 
-        self.current_frame = (self.current_frame + 1) % FRAME_IN_FLIGHT;
+        self.current_frame = (self.current_frame + 1) % FRAMES_IN_FLIGHT;
     }
 
     #[inline]
     pub fn request_recreate(&mut self) {
         self.recreate_swapchain = true;
+    }
+
+    #[inline]
+    pub fn current_frame(&self) -> usize {
+        self.current_frame
     }
 }

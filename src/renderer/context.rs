@@ -1,22 +1,23 @@
 use std::sync::Arc;
 
 use vulkano::{
+    VulkanLibrary,
     command_buffer::allocator::StandardCommandBufferAllocator,
+    descriptor_set::allocator::StandardDescriptorSetAllocator,
     device::{
-        physical::{PhysicalDevice, PhysicalDeviceType},
         Device, DeviceCreateInfo, DeviceExtensions, DeviceFeatures, Queue, QueueCreateInfo,
         QueueFlags,
+        physical::{PhysicalDevice, PhysicalDeviceType},
     },
     instance::{
+        Instance, InstanceCreateFlags, InstanceCreateInfo,
         debug::{
             DebugUtilsMessageSeverity, DebugUtilsMessageType, DebugUtilsMessenger,
             DebugUtilsMessengerCallback, DebugUtilsMessengerCreateInfo,
         },
-        Instance, InstanceCreateFlags, InstanceCreateInfo,
     },
     memory::allocator::StandardMemoryAllocator,
     swapchain::Surface,
-    VulkanLibrary,
 };
 use winit::event_loop::ActiveEventLoop;
 
@@ -28,6 +29,7 @@ pub struct VulkanContext {
     graphics_queue: Arc<Queue>,
     memory_allocator: Arc<StandardMemoryAllocator>,
     command_buffer_allocator: Arc<StandardCommandBufferAllocator>,
+    descriptor_set_allocator: Arc<StandardDescriptorSetAllocator>,
 }
 
 struct PhysicalDeviceInfo {
@@ -45,6 +47,10 @@ impl VulkanContext {
             device.clone(),
             Default::default(),
         ));
+        let descriptor_set_allocator = Arc::new(StandardDescriptorSetAllocator::new(
+            device.clone(),
+            Default::default(),
+        ));
 
         VulkanContext {
             _messenger,
@@ -54,6 +60,7 @@ impl VulkanContext {
             graphics_queue: queue,
             memory_allocator,
             command_buffer_allocator,
+            descriptor_set_allocator,
         }
     }
 
@@ -210,5 +217,10 @@ impl VulkanContext {
     #[inline]
     pub fn command_allocator(&self) -> &Arc<StandardCommandBufferAllocator> {
         &self.command_buffer_allocator
+    }
+
+    #[inline]
+    pub fn descriptor_set_allocator(&self) -> &Arc<StandardDescriptorSetAllocator> {
+        &self.descriptor_set_allocator
     }
 }

@@ -5,24 +5,24 @@ use crate::{renderer::Renderer, resources::buffers::VertexT, scene::mesh::Mesh};
 
 const VERTICES: [VertexT; 4] = [
     VertexT {
-        in_position: [-1.0, -0.5],
-        in_color: [0.0, 1.0, 0.0],
-    },
-    VertexT {
-        in_position: [0.0, -0.5],
+        in_position: [-0.5, -0.5],
         in_color: [1.0, 0.0, 0.0],
     },
     VertexT {
-        in_position: [-0.5, 0.5],
-        in_color: [0.0, 0.0, 1.0],
+        in_position: [0.5, -0.5],
+        in_color: [0.0, 1.0, 0.0],
     },
     VertexT {
         in_position: [0.5, 0.5],
-        in_color: [0.0, 1.0, 0.0],
+        in_color: [0.0, 0.0, 1.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5],
+        in_color: [1.0, 1.0, 1.0],
     },
 ];
 
-const INDEXES: [u32; 6] = [0, 1, 2, 2, 1, 3];
+const INDEXES: [u32; 6] = [0, 1, 2, 2, 3, 0];
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;

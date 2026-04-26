@@ -4,9 +4,10 @@ use vulkano::{
         AutoCommandBufferBuilder, CommandBufferUsage, PrimaryAutoCommandBuffer,
         RenderingAttachmentInfo, RenderingInfo, allocator::StandardCommandBufferAllocator,
     },
+    descriptor_set::DescriptorSet,
     format::ClearValue,
     image::view::ImageView,
-    pipeline::{GraphicsPipeline, graphics::viewport::Viewport},
+    pipeline::{GraphicsPipeline, Pipeline, PipelineBindPoint, graphics::viewport::Viewport},
     render_pass::{AttachmentLoadOp, AttachmentStoreOp},
 };
 
@@ -17,6 +18,7 @@ pub fn record_command_buffer(
     queue_family_index: u32,
     pipeline: &Arc<GraphicsPipeline>,
     swapchain_image_view: &Arc<ImageView>,
+    mvp_set: Arc<DescriptorSet>,
     mesh: &Mesh,
 ) -> Arc<PrimaryAutoCommandBuffer> {
     let mut builder = AutoCommandBufferBuilder::primary(
@@ -55,6 +57,13 @@ pub fn record_command_buffer(
         )
         .unwrap()
         .bind_pipeline_graphics(pipeline.clone())
+        .unwrap()
+        .bind_descriptor_sets(
+            PipelineBindPoint::Graphics,
+            pipeline.layout().clone(),
+            0,
+            mvp_set,
+        )
         .unwrap();
 
     //TODO: Handle multiple meshes
