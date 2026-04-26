@@ -1,11 +1,18 @@
 use std::sync::Arc;
 
 use vulkano::{
+    DeviceSize,
     buffer::{Buffer, BufferCreateInfo, BufferUsage, Subbuffer},
+    command_buffer::{
+        AutoCommandBufferBuilder, CommandBufferUsage, CopyBufferInfo, PrimaryCommandBufferAbstract,
+        allocator::StandardCommandBufferAllocator,
+    },
+    device::Queue,
     memory::allocator::{AllocationCreateInfo, MemoryTypeFilter, StandardMemoryAllocator},
+    sync::GpuFuture,
 };
 
-use crate::resources::buffers::VertexT;
+use crate::resources::buffers::{VertexT, upload_buffer};
 
 pub struct Mesh {
     vertex_buffer: Subbuffer<[VertexT]>,
@@ -15,38 +22,36 @@ pub struct Mesh {
 impl Mesh {
     pub fn new(
         allocator: &Arc<StandardMemoryAllocator>,
+        command_allocator: &Arc<StandardCommandBufferAllocator>,
+        transfer_queue: &Arc<Queue>,
         vertices: &[VertexT],
         indexes: &[u32],
     ) -> Self {
+        let mut cbb = AutoCommandBufferBuilder::primary(
+            command_allocator.clone(),
+            transfer_queue.queue_family_index(),
+            CommandBufferUsage::OneTimeSubmit,
+        )
+        .unwrap();
+
+        let vertex_buffer =
+            upload_buffer(allocator, &mut cbb, vertices, BufferUsage::VERTEX_BUFFER).unwrap();
+
+        let index_buffer =
+            upload_buffer(allocator, &mut cbb, indexes, BufferUsage::INDEX_BUFFER).unwrap();
+
+        let cb = cbb.build().unwrap();
+
+        cb.execute(transfer_queue.clone())
+            .unwrap()
+            .then_signal_fence_and_flush()
+            .unwrap()
+            .wait(None)
+            .unwrap();
+
         Self {
-            vertex_buffer: Buffer::from_iter(
-                allocator.clone(),
-                BufferCreateInfo {
-                    usage: BufferUsage::VERTEX_BUFFER,
-                    ..Default::default()
-                },
-                AllocationCreateInfo {
-                    memory_type_filter: MemoryTypeFilter::PREFER_DEVICE
-                        | MemoryTypeFilter::HOST_SEQUENTIAL_WRITE,
-                    ..Default::default()
-                },
-                vertices.iter().cloned(),
-            )
-            .unwrap(),
-            index_buffer: Buffer::from_iter(
-                allocator.clone(),
-                BufferCreateInfo {
-                    usage: BufferUsage::INDEX_BUFFER,
-                    ..Default::default()
-                },
-                AllocationCreateInfo {
-                    memory_type_filter: MemoryTypeFilter::PREFER_DEVICE
-                        | MemoryTypeFilter::HOST_SEQUENTIAL_WRITE,
-                    ..Default::default()
-                },
-                indexes.iter().cloned(),
-            )
-            .unwrap(),
+            vertex_buffer,
+            index_buffer,
         }
     }
 

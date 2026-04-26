@@ -47,7 +47,13 @@ impl ApplicationHandler for TriangleApp {
 
         let window = Arc::new(window);
         let rend = Renderer::new(window.clone(), event_loop);
-        let mesh = Mesh::new(rend.context().memory_allocator(), &VERTICES, &INDEXES);
+        let mesh = Mesh::new(
+            rend.context().memory_allocator(),
+            rend.context().command_allocator(),
+            rend.context().graphics_queue(),
+            &VERTICES,
+            &INDEXES,
+        );
 
         self.renderer = Some(rend);
         self.window = Some(window);
