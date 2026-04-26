@@ -48,21 +48,17 @@ impl Renderer {
     }
 
     pub fn draw_frame(&mut self, mesh: &Mesh) {
+        self.swapchain.wait_for_current_frame_fence();
+
         let future = self
             .swapchain
             .acquire(Some(Duration::from_secs(1)))
             .unwrap();
 
-        self.swapchain.wait_for_current_frame_fence();
-
         let frame_index = self.swapchain.current_frame();
         let model = Mat4::IDENTITY.to_cols_array_2d();
-        let view = Mat4::look_at_rh(
-            Vec3::new(0.0, 0.0, 2.0),
-            Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(0.0, 1.0, 0.0),
-        )
-        .to_cols_array_2d();
+        let view = Mat4::look_at_rh(Vec3::new(1.5, 1.0, 2.0), Vec3::new(0.0, 0.0, 0.0), Vec3::Y)
+            .to_cols_array_2d();
         let proj =
             Mat4::perspective_rh(45.0_f32.to_radians(), 16.0 / 9.0, 0.1, 100.0).to_cols_array_2d();
         let mvp = vs::MVP { model, view, proj };
