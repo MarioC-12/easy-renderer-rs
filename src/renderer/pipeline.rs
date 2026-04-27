@@ -16,7 +16,7 @@ use vulkano::{
             color_blend::{ColorBlendAttachmentState, ColorBlendState},
             input_assembly::InputAssemblyState,
             multisample::MultisampleState,
-            rasterization::RasterizationState,
+            rasterization::{CullMode, RasterizationState},
             subpass::{PipelineRenderingCreateInfo, PipelineSubpassType},
             vertex_input::{Vertex, VertexDefinition},
             viewport::ViewportState,
@@ -63,7 +63,10 @@ impl PipelineBundle {
                 vertex_input_state: Some(vertex_input_state),
                 input_assembly_state: Some(InputAssemblyState::default()),
                 viewport_state: Some(ViewportState::default()),
-                rasterization_state: Some(RasterizationState::default()),
+                rasterization_state: Some(RasterizationState {
+                    cull_mode: CullMode::Back,
+                    ..Default::default()
+                }),
                 multisample_state: Some(MultisampleState::default()),
                 color_blend_state: Some(ColorBlendState::with_attachment_states(
                     rendering_info.color_attachment_formats.len() as u32,

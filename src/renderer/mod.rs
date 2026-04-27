@@ -4,7 +4,7 @@ mod descriptors;
 mod pipeline;
 mod swapchain;
 
-use std::{sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration, time::Instant};
 
 use glam::{Mat4, Vec3};
 use vulkano::{command_buffer::PrimaryAutoCommandBuffer, sync::GpuFuture};
@@ -25,6 +25,7 @@ pub struct Renderer {
     swapchain: SwapchainBundle,
     pipeline: PipelineBundle,
     descriptors: DescriptorBundle,
+    start: Instant,
 }
 
 impl Renderer {
@@ -44,6 +45,7 @@ impl Renderer {
             swapchain,
             pipeline,
             descriptors,
+            start: Instant::now(),
         }
     }
 
@@ -56,7 +58,9 @@ impl Renderer {
             .unwrap();
 
         let frame_index = self.swapchain.current_frame();
-        let model = Mat4::IDENTITY.to_cols_array_2d();
+        let elapsed = self.start.elapsed().as_secs_f32();
+        let model = (Mat4::from_rotation_y(elapsed) * Mat4::from_rotation_x(elapsed * 0.5))
+            .to_cols_array_2d();
         let view = Mat4::look_at_rh(Vec3::new(1.5, 1.0, 2.0), Vec3::new(0.0, 0.0, 0.0), Vec3::Y)
             .to_cols_array_2d();
         let proj =

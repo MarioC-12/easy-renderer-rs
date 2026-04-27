@@ -3,26 +3,45 @@ use winit::{application::ApplicationHandler, event::WindowEvent, window::Window}
 
 use crate::{renderer::Renderer, resources::buffers::VertexT, scene::mesh::Mesh};
 
-const VERTICES: [VertexT; 4] = [
+const VERTICES: [VertexT; 8] = [
     VertexT {
-        in_position: [-0.5, -0.5],
+        in_position: [-0.5, -0.5, -0.5],
         in_color: [1.0, 0.0, 0.0],
     },
     VertexT {
-        in_position: [0.5, -0.5],
+        in_position: [0.5, -0.5, -0.5],
         in_color: [0.0, 1.0, 0.0],
     },
     VertexT {
-        in_position: [0.5, 0.5],
+        in_position: [0.5, 0.5, -0.5],
         in_color: [0.0, 0.0, 1.0],
     },
     VertexT {
-        in_position: [-0.5, 0.5],
+        in_position: [-0.5, 0.5, -0.5],
         in_color: [1.0, 1.0, 1.0],
+    },
+    VertexT {
+        in_position: [-0.5, -0.5, 0.5],
+        in_color: [1.0, 0.0, 1.0],
+    },
+    VertexT {
+        in_position: [0.5, -0.5, 0.5],
+        in_color: [0.0, 1.0, 1.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, 0.5],
+        in_color: [0.5, 0.5, 0.5],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5, 0.5],
+        in_color: [0.5, 0.0, 0.5],
     },
 ];
 
-const INDEXES: [u32; 6] = [0, 1, 2, 2, 3, 0];
+const INDEXES: [u32; 36] = [
+    0, 1, 2, 2, 3, 0, 1, 5, 6, 6, 2, 1, 5, 4, 7, 7, 6, 5, 4, 0, 3, 3, 7, 4, 3, 2, 6, 6, 7, 3, 4, 5,
+    1, 1, 0, 4,
+];
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -38,7 +57,7 @@ impl ApplicationHandler for TriangleApp {
         let window = event_loop
             .create_window(
                 Window::default_attributes()
-                    .with_title("Rust Triangle!")
+                    .with_title("Rust Cube!")
                     .with_inner_size(winit::dpi::LogicalSize::new(WIDTH as f64, HEIGHT as f64))
                     .with_resizable(true)
                     .with_visible(true),
