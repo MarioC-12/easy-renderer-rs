@@ -174,6 +174,10 @@ impl SwapchainBundle {
                     self.recreate_swapchain = true;
                     return Err(VulkanError::OutOfDate);
                 }
+                Err(VulkanError::Timeout) => {
+                    self.recreate_swapchain = true;
+                    return Err(VulkanError::Timeout);
+                }
                 Err(e) => panic!("failed to acquire next image: {e}"),
             };
 

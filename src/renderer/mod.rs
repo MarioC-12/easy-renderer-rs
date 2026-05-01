@@ -7,7 +7,7 @@ mod swapchain;
 use std::{sync::Arc, time::Duration, time::Instant};
 
 use glam::{Mat4, Vec3};
-use vulkano::{command_buffer::PrimaryAutoCommandBuffer, sync::GpuFuture};
+use vulkano::{VulkanError, command_buffer::PrimaryAutoCommandBuffer, sync::GpuFuture};
 use winit::{event_loop::ActiveEventLoop, window::Window};
 
 use crate::{
@@ -49,13 +49,10 @@ impl Renderer {
         }
     }
 
-    pub fn draw_frame(&mut self, mesh: &Mesh) {
+    pub fn draw_frame(&mut self, mesh: &Mesh) -> Result<(), VulkanError> {
         self.swapchain.wait_for_current_frame_fence();
 
-        let future = self
-            .swapchain
-            .acquire(Some(Duration::from_secs(1)))
-            .unwrap();
+        let future = self.swapchain.acquire(None)?;
 
         let frame_index = self.swapchain.current_frame();
         let elapsed = self.start.elapsed().as_secs_f32();
@@ -89,6 +86,8 @@ impl Renderer {
             self.context.graphics_queue().clone(),
             false,
         );
+
+        Ok(())
     }
 
     pub fn handle_resize(&mut self) {

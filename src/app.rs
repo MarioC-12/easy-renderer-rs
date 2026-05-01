@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use vulkano::VulkanError;
 use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
 
 use crate::{renderer::Renderer, resources::buffers::VertexT, scene::mesh::Mesh};
@@ -50,6 +51,7 @@ pub struct TriangleApp {
     window: Option<Arc<Window>>,
     renderer: Option<Renderer>,
     mesh: Option<Mesh>,
+    suspended: bool,
 }
 
 impl ApplicationHandler for TriangleApp {
@@ -90,15 +92,22 @@ impl ApplicationHandler for TriangleApp {
                 println!("Stopping program!");
                 event_loop.exit();
             }
+            WindowEvent::Occluded(occluded) => {
+                self.suspended = occluded;
+                if !occluded {
+                    self.window.as_ref().unwrap().request_redraw();
+                }
+            }
             WindowEvent::Resized(_) => {
                 self.renderer.as_mut().unwrap().handle_resize();
             }
             WindowEvent::RedrawRequested => {
-                self.renderer
-                    .as_mut()
-                    .unwrap()
-                    .draw_frame(self.mesh.as_ref().unwrap());
-                self.window.as_ref().unwrap().request_redraw();
+                if !self.suspended {
+                    if let Err(e) = self.renderer.as_mut().unwrap().draw_frame(self.mesh.as_ref().unwrap()) {
+                        eprint!("Frame skipped: {e}");
+                    }
+                    self.window.as_ref().unwrap().request_redraw();
+                }
             }
             _ => (),
         }
@@ -111,6 +120,7 @@ impl TriangleApp {
             window: None,
             renderer: None,
             mesh: None,
+            suspended: false,
         }
     }
 }
