@@ -15,6 +15,8 @@ pub struct VertexT {
     pub in_position: [f32; 3],
     #[format(R32G32B32_SFLOAT)]
     pub in_color: [f32; 3],
+    #[format(R32G32_SFLOAT)]
+    pub tex_coord: [f32; 2],
 }
 
 pub fn upload_buffer<T>(

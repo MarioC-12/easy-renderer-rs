@@ -2,47 +2,36 @@ use std::sync::Arc;
 use vulkano::VulkanError;
 use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
 
-use crate::{renderer::Renderer, resources::buffers::VertexT, scene::mesh::Mesh};
+use crate::{
+    renderer::Renderer,
+    resources::{buffers::VertexT, textures::Texture},
+    scene::mesh::Mesh,
+};
 
-const VERTICES: [VertexT; 8] = [
+const VERTICES: [VertexT; 4] = [
     VertexT {
-        in_position: [-0.5, -0.5, -0.5],
+        in_position: [-0.5, -0.5, 0.0],
         in_color: [1.0, 0.0, 0.0],
+        tex_coord: [1.0, 0.0],
     },
     VertexT {
-        in_position: [0.5, -0.5, -0.5],
+        in_position: [0.5, -0.5, 0.0],
         in_color: [0.0, 1.0, 0.0],
+        tex_coord: [0.0, 0.0],
     },
     VertexT {
-        in_position: [0.5, 0.5, -0.5],
+        in_position: [0.5, 0.5, 0.0],
         in_color: [0.0, 0.0, 1.0],
+        tex_coord: [0.0, 1.0],
     },
     VertexT {
-        in_position: [-0.5, 0.5, -0.5],
+        in_position: [-0.5, 0.5, 0.0],
         in_color: [1.0, 1.0, 1.0],
-    },
-    VertexT {
-        in_position: [-0.5, -0.5, 0.5],
-        in_color: [1.0, 0.0, 1.0],
-    },
-    VertexT {
-        in_position: [0.5, -0.5, 0.5],
-        in_color: [0.0, 1.0, 1.0],
-    },
-    VertexT {
-        in_position: [0.5, 0.5, 0.5],
-        in_color: [0.5, 0.5, 0.5],
-    },
-    VertexT {
-        in_position: [-0.5, 0.5, 0.5],
-        in_color: [0.5, 0.0, 0.5],
+        tex_coord: [1.0, 1.0],
     },
 ];
 
-const INDEXES: [u32; 36] = [
-    0, 1, 2, 2, 3, 0, 1, 5, 6, 6, 2, 1, 5, 4, 7, 7, 6, 5, 4, 0, 3, 3, 7, 4, 3, 2, 6, 6, 7, 3, 4, 5,
-    1, 1, 0, 4,
-];
+const INDEXES: [u32; 6] = [0, 1, 2, 2, 3, 0];
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;
@@ -75,6 +64,13 @@ impl ApplicationHandler for TriangleApp {
             &VERTICES,
             &INDEXES,
         );
+        let texture = Texture::load_texture(
+            rend.context().memory_allocator(),
+            rend.context().command_allocator(),
+            rend.context().graphics_queue(),
+            "textures/texture.jpg",
+            rend.context().texture_sampler(),
+        );
 
         self.renderer = Some(rend);
         self.window = Some(window);
@@ -103,7 +99,12 @@ impl ApplicationHandler for TriangleApp {
             }
             WindowEvent::RedrawRequested => {
                 if !self.suspended {
-                    if let Err(e) = self.renderer.as_mut().unwrap().draw_frame(self.mesh.as_ref().unwrap()) {
+                    if let Err(e) = self
+                        .renderer
+                        .as_mut()
+                        .unwrap()
+                        .draw_frame(self.mesh.as_ref().unwrap())
+                    {
                         eprint!("Frame skipped: {e}");
                     }
                     self.window.as_ref().unwrap().request_redraw();

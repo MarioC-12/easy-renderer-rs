@@ -54,18 +54,22 @@ impl Mesh {
         }
     }
 
+    #[inline]
     pub fn vertex_buffer(&self) -> &Subbuffer<[VertexT]> {
         &self.vertex_buffer
     }
 
+    #[inline]
     pub fn num_vertices(&self) -> u32 {
         self.vertex_buffer.len() as u32
     }
 
+    #[inline]
     pub fn index_buffer(&self) -> &Subbuffer<[u32]> {
         &self.index_buffer
     }
 
+    #[inline]
     pub fn num_indexes(&self) -> u32 {
         self.index_buffer.len() as u32
     }

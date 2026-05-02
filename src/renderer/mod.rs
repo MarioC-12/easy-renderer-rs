@@ -15,7 +15,7 @@ use crate::{
         commands::record_command_buffer, context::VulkanContext, descriptors::DescriptorBundle,
         pipeline::PipelineBundle, swapchain::SwapchainBundle,
     },
-    resources::shaders::vs,
+    resources::{shaders::vs, textures::Texture},
     scene::mesh::Mesh,
 };
 
@@ -33,10 +33,20 @@ impl Renderer {
         let context = VulkanContext::new(event_loop);
         let swapchain = SwapchainBundle::new(context.device(), &window);
         let pipeline = PipelineBundle::new(context.device(), &swapchain);
+        let texture = Texture::load_texture(
+            context.memory_allocator(),
+            context.command_allocator(),
+            context.graphics_queue(),
+            "textures/texture.jpg",
+            context.texture_sampler(),
+        )
+        .unwrap();
+
         let descriptors = DescriptorBundle::new(
             context.memory_allocator(),
             context.descriptor_set_allocator(),
             pipeline.pipeline(),
+            &texture,
         );
 
         Renderer {
@@ -56,8 +66,9 @@ impl Renderer {
 
         let frame_index = self.swapchain.current_frame();
         let elapsed = self.start.elapsed().as_secs_f32();
-        let model = (Mat4::from_rotation_y(elapsed) * Mat4::from_rotation_x(elapsed * 0.5))
-            .to_cols_array_2d();
+        // let model = (Mat4::from_rotation_y(elapsed) * Mat4::from_rotation_x(elapsed * 0.5))
+        //     .to_cols_array_2d();
+        let model = Mat4::IDENTITY.to_cols_array_2d();
         let view = Mat4::look_at_rh(Vec3::new(1.5, 1.0, 2.0), Vec3::new(0.0, 0.0, 0.0), Vec3::Y)
             .to_cols_array_2d();
         let proj =

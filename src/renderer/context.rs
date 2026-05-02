@@ -9,6 +9,7 @@ use vulkano::{
         QueueFlags,
         physical::{PhysicalDevice, PhysicalDeviceType},
     },
+    image::sampler::{Sampler, SamplerAddressMode, SamplerCreateInfo},
     instance::{
         Instance, InstanceCreateFlags, InstanceCreateInfo,
         debug::{
@@ -30,6 +31,7 @@ pub struct VulkanContext {
     memory_allocator: Arc<StandardMemoryAllocator>,
     command_buffer_allocator: Arc<StandardCommandBufferAllocator>,
     descriptor_set_allocator: Arc<StandardDescriptorSetAllocator>,
+    texture_sampler: Arc<Sampler>,
 }
 
 struct PhysicalDeviceInfo {
@@ -51,6 +53,16 @@ impl VulkanContext {
             device.clone(),
             Default::default(),
         ));
+        let texture_sampler = Sampler::new(
+            device.clone(),
+            SamplerCreateInfo {
+                mag_filter: vulkano::image::sampler::Filter::Linear,
+                min_filter: vulkano::image::sampler::Filter::Linear,
+                address_mode: [SamplerAddressMode::Repeat; 3],
+                ..Default::default()
+            },
+        )
+        .unwrap();
 
         VulkanContext {
             _messenger,
@@ -61,6 +73,7 @@ impl VulkanContext {
             memory_allocator,
             command_buffer_allocator,
             descriptor_set_allocator,
+            texture_sampler,
         }
     }
 
@@ -222,5 +235,10 @@ impl VulkanContext {
     #[inline]
     pub fn descriptor_set_allocator(&self) -> &Arc<StandardDescriptorSetAllocator> {
         &self.descriptor_set_allocator
+    }
+
+    #[inline]
+    pub fn texture_sampler(&self) -> &Arc<Sampler> {
+        &self.texture_sampler
     }
 }

@@ -10,11 +10,14 @@ use vulkano::{
     pipeline::{GraphicsPipeline, Pipeline},
 };
 
-use crate::{renderer::swapchain::FRAMES_IN_FLIGHT, resources::shaders::vs};
+use crate::{
+    renderer::swapchain::FRAMES_IN_FLIGHT,
+    resources::{shaders::vs, textures::Texture},
+};
 
 pub struct DescriptorBundle {
     mvp_buffers: Vec<Subbuffer<vs::MVP>>,
-    mvp_sets: Vec<Arc<DescriptorSet>>,
+    sets: Vec<Arc<DescriptorSet>>,
 }
 
 impl DescriptorBundle {
@@ -22,6 +25,7 @@ impl DescriptorBundle {
         allocator: &Arc<StandardMemoryAllocator>,
         descriptor_set_allocator: &Arc<StandardDescriptorSetAllocator>,
         pipeline: &Arc<GraphicsPipeline>,
+        texture: &Texture,
     ) -> Self {
         let layout = pipeline.layout().set_layouts().get(0).unwrap().clone();
 
@@ -43,31 +47,36 @@ impl DescriptorBundle {
             })
             .collect();
 
-        let mvp_sets = mvp_buffers
+        let sets = mvp_buffers
             .iter()
             .map(|buf| {
                 DescriptorSet::new(
                     descriptor_set_allocator.clone(),
                     layout.clone(),
-                    [WriteDescriptorSet::buffer(0, buf.clone())],
+                    [
+                        WriteDescriptorSet::buffer(0, buf.clone()),
+                        WriteDescriptorSet::image_view_sampler(
+                            1,
+                            texture.view().clone(),
+                            texture.sampler().clone(),
+                        ),
+                    ],
                     [],
                 )
                 .unwrap()
             })
             .collect();
 
-        Self {
-            mvp_buffers,
-            mvp_sets,
-        }
+        Self { mvp_buffers, sets }
     }
 
+    #[inline]
     pub fn update_mvp(&mut self, frame_index: usize, mvp: vs::MVP) {
         *self.mvp_buffers[frame_index].write().unwrap() = mvp;
     }
 
     #[inline]
     pub fn mvp_set(&self, frame_index: usize) -> &Arc<DescriptorSet> {
-        &self.mvp_sets[frame_index]
+        &self.sets[frame_index]
     }
 }
