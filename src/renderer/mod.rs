@@ -1,5 +1,5 @@
 mod commands;
-mod context;
+pub mod context;
 mod descriptors;
 mod pipeline;
 mod swapchain;
@@ -21,7 +21,7 @@ use crate::{
 
 pub struct Renderer {
     window: Arc<Window>,
-    context: VulkanContext,
+    context: Arc<VulkanContext>,
     swapchain: SwapchainBundle,
     pipeline: PipelineBundle,
     descriptors: DescriptorBundle,
@@ -29,24 +29,14 @@ pub struct Renderer {
 }
 
 impl Renderer {
-    pub fn new(window: Arc<Window>, event_loop: &ActiveEventLoop) -> Self {
-        let context = VulkanContext::new(event_loop);
+    pub fn new(context: Arc<VulkanContext>, window: Arc<Window>, texture: &Texture) -> Self {
         let swapchain = SwapchainBundle::new(context.device(), &window);
         let pipeline = PipelineBundle::new(context.device(), &swapchain);
-        let texture = Texture::load_texture(
-            context.memory_allocator(),
-            context.command_allocator(),
-            context.graphics_queue(),
-            "textures/texture.jpg",
-            context.texture_sampler(),
-        )
-        .unwrap();
-
         let descriptors = DescriptorBundle::new(
             context.memory_allocator(),
             context.descriptor_set_allocator(),
             pipeline.pipeline(),
-            &texture,
+            texture,
         );
 
         Renderer {

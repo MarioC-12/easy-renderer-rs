@@ -22,8 +22,8 @@ use vulkano::{
 };
 use winit::event_loop::ActiveEventLoop;
 
+#[derive(Clone)]
 pub struct VulkanContext {
-    _messenger: Option<DebugUtilsMessenger>,
     instance: Arc<Instance>,
     physical_device: Arc<PhysicalDevice>,
     device: Arc<Device>,
@@ -65,7 +65,6 @@ impl VulkanContext {
         .unwrap();
 
         VulkanContext {
-            _messenger,
             instance,
             physical_device: phys_info.physical_device,
             device,

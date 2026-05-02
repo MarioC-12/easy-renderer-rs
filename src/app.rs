@@ -1,50 +1,145 @@
 use std::sync::Arc;
-use vulkano::VulkanError;
 use winit::{application::ApplicationHandler, event::WindowEvent, window::Window};
 
 use crate::{
-    renderer::Renderer,
+    renderer::{Renderer, context::VulkanContext},
     resources::{buffers::VertexT, textures::Texture},
     scene::mesh::Mesh,
 };
 
 const VERTICES: [VertexT; 24] = [
     // Front face (z = 0.5)
-    VertexT { in_position: [-0.5, -0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [0.0, 0.0] },
-    VertexT { in_position: [0.5, -0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [1.0, 0.0] },
-    VertexT { in_position: [0.5, 0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [1.0, 1.0] },
-    VertexT { in_position: [-0.5, 0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [0.0, 1.0] },
+    VertexT {
+        in_position: [-0.5, -0.5, 0.5],
+        in_color: [1.0, 0.0, 0.0],
+        tex_coord: [0.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, -0.5, 0.5],
+        in_color: [1.0, 0.0, 0.0],
+        tex_coord: [1.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, 0.5],
+        in_color: [1.0, 0.0, 0.0],
+        tex_coord: [1.0, 1.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5, 0.5],
+        in_color: [1.0, 0.0, 0.0],
+        tex_coord: [0.0, 1.0],
+    },
     // Back face (z = -0.5)
-    VertexT { in_position: [0.5, -0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [0.0, 0.0] },
-    VertexT { in_position: [-0.5, -0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [1.0, 0.0] },
-    VertexT { in_position: [-0.5, 0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [1.0, 1.0] },
-    VertexT { in_position: [0.5, 0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [0.0, 1.0] },
+    VertexT {
+        in_position: [0.5, -0.5, -0.5],
+        in_color: [0.0, 1.0, 0.0],
+        tex_coord: [0.0, 0.0],
+    },
+    VertexT {
+        in_position: [-0.5, -0.5, -0.5],
+        in_color: [0.0, 1.0, 0.0],
+        tex_coord: [1.0, 0.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5, -0.5],
+        in_color: [0.0, 1.0, 0.0],
+        tex_coord: [1.0, 1.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, -0.5],
+        in_color: [0.0, 1.0, 0.0],
+        tex_coord: [0.0, 1.0],
+    },
     // Right face (x = 0.5)
-    VertexT { in_position: [0.5, -0.5, 0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [0.0, 0.0] },
-    VertexT { in_position: [0.5, -0.5, -0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [1.0, 0.0] },
-    VertexT { in_position: [0.5, 0.5, -0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [1.0, 1.0] },
-    VertexT { in_position: [0.5, 0.5, 0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [0.0, 1.0] },
+    VertexT {
+        in_position: [0.5, -0.5, 0.5],
+        in_color: [0.0, 0.0, 1.0],
+        tex_coord: [0.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, -0.5, -0.5],
+        in_color: [0.0, 0.0, 1.0],
+        tex_coord: [1.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, -0.5],
+        in_color: [0.0, 0.0, 1.0],
+        tex_coord: [1.0, 1.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, 0.5],
+        in_color: [0.0, 0.0, 1.0],
+        tex_coord: [0.0, 1.0],
+    },
     // Left face (x = -0.5)
-    VertexT { in_position: [-0.5, -0.5, -0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [0.0, 0.0] },
-    VertexT { in_position: [-0.5, -0.5, 0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [1.0, 0.0] },
-    VertexT { in_position: [-0.5, 0.5, 0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [1.0, 1.0] },
-    VertexT { in_position: [-0.5, 0.5, -0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [0.0, 1.0] },
+    VertexT {
+        in_position: [-0.5, -0.5, -0.5],
+        in_color: [1.0, 1.0, 0.0],
+        tex_coord: [0.0, 0.0],
+    },
+    VertexT {
+        in_position: [-0.5, -0.5, 0.5],
+        in_color: [1.0, 1.0, 0.0],
+        tex_coord: [1.0, 0.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5, 0.5],
+        in_color: [1.0, 1.0, 0.0],
+        tex_coord: [1.0, 1.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5, -0.5],
+        in_color: [1.0, 1.0, 0.0],
+        tex_coord: [0.0, 1.0],
+    },
     // Top face (y = 0.5)
-    VertexT { in_position: [-0.5, 0.5, 0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [0.0, 0.0] },
-    VertexT { in_position: [0.5, 0.5, 0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [1.0, 0.0] },
-    VertexT { in_position: [0.5, 0.5, -0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [1.0, 1.0] },
-    VertexT { in_position: [-0.5, 0.5, -0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [0.0, 1.0] },
+    VertexT {
+        in_position: [-0.5, 0.5, 0.5],
+        in_color: [0.0, 1.0, 1.0],
+        tex_coord: [0.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, 0.5],
+        in_color: [0.0, 1.0, 1.0],
+        tex_coord: [1.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, 0.5, -0.5],
+        in_color: [0.0, 1.0, 1.0],
+        tex_coord: [1.0, 1.0],
+    },
+    VertexT {
+        in_position: [-0.5, 0.5, -0.5],
+        in_color: [0.0, 1.0, 1.0],
+        tex_coord: [0.0, 1.0],
+    },
     // Bottom face (y = -0.5)
-    VertexT { in_position: [-0.5, -0.5, -0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [0.0, 0.0] },
-    VertexT { in_position: [0.5, -0.5, -0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [1.0, 0.0] },
-    VertexT { in_position: [0.5, -0.5, 0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [1.0, 1.0] },
-    VertexT { in_position: [-0.5, -0.5, 0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [0.0, 1.0] },
+    VertexT {
+        in_position: [-0.5, -0.5, -0.5],
+        in_color: [1.0, 0.0, 1.0],
+        tex_coord: [0.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, -0.5, -0.5],
+        in_color: [1.0, 0.0, 1.0],
+        tex_coord: [1.0, 0.0],
+    },
+    VertexT {
+        in_position: [0.5, -0.5, 0.5],
+        in_color: [1.0, 0.0, 1.0],
+        tex_coord: [1.0, 1.0],
+    },
+    VertexT {
+        in_position: [-0.5, -0.5, 0.5],
+        in_color: [1.0, 0.0, 1.0],
+        tex_coord: [0.0, 1.0],
+    },
 ];
 
 const INDEXES: [u32; 36] = [
-    0, 2, 1, 2, 0, 3,       // Front
-    4, 6, 5, 6, 4, 7,       // Back
-    8, 10, 9, 10, 8, 11,    // Right
+    0, 2, 1, 2, 0, 3, // Front
+    4, 6, 5, 6, 4, 7, // Back
+    8, 10, 9, 10, 8, 11, // Right
     12, 14, 13, 14, 12, 15, // Left
     16, 18, 17, 18, 16, 19, // Top
     20, 22, 21, 22, 20, 23, // Bottom
@@ -73,21 +168,24 @@ impl ApplicationHandler for TriangleApp {
             .unwrap();
 
         let window = Arc::new(window);
-        let rend = Renderer::new(window.clone(), event_loop);
+        let context = Arc::new(VulkanContext::new(event_loop));
         let mesh = Mesh::new(
-            rend.context().memory_allocator(),
-            rend.context().command_allocator(),
-            rend.context().graphics_queue(),
+            context.memory_allocator(),
+            context.command_allocator(),
+            context.graphics_queue(),
             &VERTICES,
             &INDEXES,
         );
         let texture = Texture::load_texture(
-            rend.context().memory_allocator(),
-            rend.context().command_allocator(),
-            rend.context().graphics_queue(),
+            context.memory_allocator(),
+            context.command_allocator(),
+            context.graphics_queue(),
             "textures/texture.jpg",
-            rend.context().texture_sampler(),
-        );
+            context.texture_sampler(),
+        )
+        .unwrap();
+
+        let rend = Renderer::new(context.clone(), window.clone(), &texture);
 
         self.renderer = Some(rend);
         self.window = Some(window);
