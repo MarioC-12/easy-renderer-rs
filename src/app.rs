@@ -8,30 +8,47 @@ use crate::{
     scene::mesh::Mesh,
 };
 
-const VERTICES: [VertexT; 4] = [
-    VertexT {
-        in_position: [-0.5, -0.5, 0.0],
-        in_color: [1.0, 0.0, 0.0],
-        tex_coord: [1.0, 0.0],
-    },
-    VertexT {
-        in_position: [0.5, -0.5, 0.0],
-        in_color: [0.0, 1.0, 0.0],
-        tex_coord: [0.0, 0.0],
-    },
-    VertexT {
-        in_position: [0.5, 0.5, 0.0],
-        in_color: [0.0, 0.0, 1.0],
-        tex_coord: [0.0, 1.0],
-    },
-    VertexT {
-        in_position: [-0.5, 0.5, 0.0],
-        in_color: [1.0, 1.0, 1.0],
-        tex_coord: [1.0, 1.0],
-    },
+const VERTICES: [VertexT; 24] = [
+    // Front face (z = 0.5)
+    VertexT { in_position: [-0.5, -0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [0.0, 0.0] },
+    VertexT { in_position: [0.5, -0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [1.0, 0.0] },
+    VertexT { in_position: [0.5, 0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [1.0, 1.0] },
+    VertexT { in_position: [-0.5, 0.5, 0.5], in_color: [1.0, 0.0, 0.0], tex_coord: [0.0, 1.0] },
+    // Back face (z = -0.5)
+    VertexT { in_position: [0.5, -0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [0.0, 0.0] },
+    VertexT { in_position: [-0.5, -0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [1.0, 0.0] },
+    VertexT { in_position: [-0.5, 0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [1.0, 1.0] },
+    VertexT { in_position: [0.5, 0.5, -0.5], in_color: [0.0, 1.0, 0.0], tex_coord: [0.0, 1.0] },
+    // Right face (x = 0.5)
+    VertexT { in_position: [0.5, -0.5, 0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [0.0, 0.0] },
+    VertexT { in_position: [0.5, -0.5, -0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [1.0, 0.0] },
+    VertexT { in_position: [0.5, 0.5, -0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [1.0, 1.0] },
+    VertexT { in_position: [0.5, 0.5, 0.5], in_color: [0.0, 0.0, 1.0], tex_coord: [0.0, 1.0] },
+    // Left face (x = -0.5)
+    VertexT { in_position: [-0.5, -0.5, -0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [0.0, 0.0] },
+    VertexT { in_position: [-0.5, -0.5, 0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [1.0, 0.0] },
+    VertexT { in_position: [-0.5, 0.5, 0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [1.0, 1.0] },
+    VertexT { in_position: [-0.5, 0.5, -0.5], in_color: [1.0, 1.0, 0.0], tex_coord: [0.0, 1.0] },
+    // Top face (y = 0.5)
+    VertexT { in_position: [-0.5, 0.5, 0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [0.0, 0.0] },
+    VertexT { in_position: [0.5, 0.5, 0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [1.0, 0.0] },
+    VertexT { in_position: [0.5, 0.5, -0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [1.0, 1.0] },
+    VertexT { in_position: [-0.5, 0.5, -0.5], in_color: [0.0, 1.0, 1.0], tex_coord: [0.0, 1.0] },
+    // Bottom face (y = -0.5)
+    VertexT { in_position: [-0.5, -0.5, -0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [0.0, 0.0] },
+    VertexT { in_position: [0.5, -0.5, -0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [1.0, 0.0] },
+    VertexT { in_position: [0.5, -0.5, 0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [1.0, 1.0] },
+    VertexT { in_position: [-0.5, -0.5, 0.5], in_color: [1.0, 0.0, 1.0], tex_coord: [0.0, 1.0] },
 ];
 
-const INDEXES: [u32; 6] = [0, 1, 2, 2, 3, 0];
+const INDEXES: [u32; 36] = [
+    0, 2, 1, 2, 0, 3,       // Front
+    4, 6, 5, 6, 4, 7,       // Back
+    8, 10, 9, 10, 8, 11,    // Right
+    12, 14, 13, 14, 12, 15, // Left
+    16, 18, 17, 18, 16, 19, // Top
+    20, 22, 21, 22, 20, 23, // Bottom
+];
 
 const WIDTH: u32 = 800;
 const HEIGHT: u32 = 600;

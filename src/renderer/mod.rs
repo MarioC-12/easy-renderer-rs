@@ -66,9 +66,9 @@ impl Renderer {
 
         let frame_index = self.swapchain.current_frame();
         let elapsed = self.start.elapsed().as_secs_f32();
-        // let model = (Mat4::from_rotation_y(elapsed) * Mat4::from_rotation_x(elapsed * 0.5))
-        //     .to_cols_array_2d();
-        let model = Mat4::IDENTITY.to_cols_array_2d();
+        let model = (Mat4::from_rotation_y(elapsed) * Mat4::from_rotation_x(elapsed * 0.5))
+            .to_cols_array_2d();
+        // let model = Mat4::IDENTITY.to_cols_array_2d();
         let view = Mat4::look_at_rh(Vec3::new(1.5, 1.0, 2.0), Vec3::new(0.0, 0.0, 0.0), Vec3::Y)
             .to_cols_array_2d();
         let proj =

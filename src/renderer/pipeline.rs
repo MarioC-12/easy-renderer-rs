@@ -64,7 +64,7 @@ impl PipelineBundle {
                 input_assembly_state: Some(InputAssemblyState::default()),
                 viewport_state: Some(ViewportState::default()),
                 rasterization_state: Some(RasterizationState {
-                    // cull_mode: CullMode::Back,
+                    cull_mode: CullMode::Back,
                     ..Default::default()
                 }),
                 multisample_state: Some(MultisampleState::default()),
